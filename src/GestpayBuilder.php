@@ -89,10 +89,16 @@ class GestpayBuilder {
         if ( false !== strpos($res, '<TransactionResult>OK</TransactionResult>') && preg_match('/<CryptDecryptString>([^<]+)<\/CryptDecryptString>/', $res, $match) ) {
         	$payment_page_url = ($this->test)? $this->payment_page_test_url : $this->payment_page_prod_url;
             return Redirect::to($payment_page_url.'?a=' . $this->shopLogin . '&b=' . $match[1]);
-        }
+        } else {
 
-        return '';
-    }
+			$xml = self::cleanXML($res);
+			$errorMessage = $xml->Body->EncryptResponse->EncryptResult->GestPayCryptDecrypt->ErrorDescription;
+			$errorCode = $xml->Body->EncryptResponse->EncryptResult->GestPayCryptDecrypt->ErrorCode;
+			throw new Exception($errorMessage . " (Code: {$errorCode})" );
+
+		}
+
+	}
 
 	/**
 	 * http://api.gestpay.it/#encrypt
@@ -163,7 +169,8 @@ class GestpayBuilder {
         $shop_transaction_id 	= (string)$response->ShopTransactionID;        
         $error_code 			= (string)$response->ErrorCode;        
         $error_description 		= (string)$response->ErrorDescription;        
-		$custom_info	 		= explode('*P1*', $response->CustomInfo);
+		$custom_infoStr	 		= str_replace('*P1*', '&' , urldecode($response->CustomInfo));
+		parse_str($custom_infoStr, $custom_info);
 
         $result = new GestpayResponse($transaction_result, $shop_transaction_id, $error_code, $error_description, $custom_info);
 
