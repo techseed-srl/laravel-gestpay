@@ -63,11 +63,13 @@ Login to your **Gestpay BackOffice** account and set:
 ### Ok, and now let's pay!
 As always, paying is the easiest thing
 ```php
-gestpay()->pay($amount, $shopTransactionId);
+gestpay()->pay($amount, $shopTransactionId, $customParameters);
 ```
 That's all! 
 - $amount: is the amount you have to pay
 - $shopTransactionId: is the unique identifier you have assigned to the transaction
+- $customParameters: array of custom payment parameters - see: http://docs.gestpay.it/gs/how-gestpay-works.html#configuration-of-fields--parameters
+- $languageId: language code (see: http://api.gestpay.it/#language-codes) 
  
 I was joking, that's not all! Now you have to handle the callback.
 Based on the gestpay configuration, you now have to create the routes. For example, you can create a controller that handles callbacks through the method "**gestpayCallback**"
