@@ -163,8 +163,9 @@ class GestpayBuilder {
         $shop_transaction_id 	= (string)$response->ShopTransactionID;        
         $error_code 			= (string)$response->ErrorCode;        
         $error_description 		= (string)$response->ErrorDescription;        
+		$custom_info	 		= explode('*P1*', $response->CustomInfo);
 
-        $result = new GestpayResponse($transaction_result, $shop_transaction_id, $error_code, $error_description);
+        $result = new GestpayResponse($transaction_result, $shop_transaction_id, $error_code, $error_description, $custom_info);
 
         return $result;
     }
