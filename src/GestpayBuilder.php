@@ -77,20 +77,24 @@ class GestpayBuilder {
 	 * @param $shopTransactionId the Identifier attributed to merchant’s transaction (Mandatory)
 	 * @param $customParameters array of custom payment parameters, default = [] - see http://docs.gestpay.it/gs/how-gestpay-works.html#configuration-of-fields--parameters
 	 * @param $languageId the language ID (for future use), default = NULL - see http://api.gestpay.it/#language-codes
+	 * @param mixed $shopLogin the shopLogin if you want to override the default config, default = NULL
 	 *
 	 * @return boolean | redirect on payment page
 	 */
-    public function pay($amount, $shopTransactionId, $customParameters = [], $languageId = null)
+    public function pay($amount, $shopTransactionId, $customParameters = [], $languageId = null, $shopLogin = null)
     {
 
 		$customInfo = http_build_query($customParameters, '', '*P1*');
-
 		$encrData = ['amount' => $amount, 'shopTransactionId' => $shopTransactionId, 'customInfo' => $customInfo];
-
+		
 		if(!is_null($languageId)){
 			$encrData["languageId"] = $languageId;
 		}
-
+		
+		if(strlen($shopLogin) > 0){
+			$this->shopLogin = $shopLogin;
+		}
+		
         $res = $this->Encrypt($encrData);
 
         if ( false !== strpos($res, '<TransactionResult>OK</TransactionResult>') && preg_match('/<CryptDecryptString>([^<]+)<\/CryptDecryptString>/', $res, $match) ) {
@@ -122,6 +126,7 @@ class GestpayBuilder {
     	if(!isset($data['shopTransactionId'])) {throw new Exception('Manca transazione');}
 
     	$data = array_merge(['shopLogin' => $this->shopLogin, 'uicCode' => $this->uicCode], $data);
+
     	foreach ($data as $key => $value) {
     		$xml_data.= '<'.$key.'>'.$value.'</'.$key.'>';
     	}
@@ -159,12 +164,17 @@ class GestpayBuilder {
 	/**
 	 * Decrypt SOAP response in order to checks whether the payment has been successful
 	 *
+	 * @param mixed $shopLogin the shopLogin if you want to override the default config, default = NULL
 	 * @return array $result containing 'transaction_result' (boolean true|false) and 'shop_transaction_id'
 	 */
-    public function checkResponse()
+    public function checkResponse($shopLogin = null)
     {
 
     	$b = request()->input('b');
+		
+		if(strlen($shopLogin) > 0){
+			$this->shopLogin = $shopLogin;
+		}
 
         $xml_response = $this->Decrypt($b);
 
