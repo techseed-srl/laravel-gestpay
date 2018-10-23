@@ -38,6 +38,13 @@ class GestpayResponse {
 	 */		
 	protected $error_description	= '';
 
+	/*
+	 * Custom info data
+	 * 
+	 */
+
+	protected $custom_info = [];
+
 	/**
 	 * Create a GestpayResponse Object
 	 *
@@ -46,11 +53,12 @@ class GestpayResponse {
 	 * @param $error_code string The error_code
 	 * @param $error_description string The error_description
 	 */
-	public function __construct($transaction_result, $shop_transaction_id, $error_code, $error_description) {
+	public function __construct($transaction_result, $shop_transaction_id, $error_code, $error_description, $custom_info) {
 		$this->transaction_result	= $transaction_result;
 		$this->shop_transaction_id	= $shop_transaction_id;
 		$this->error_code			= $error_code;
 		$this->error_description	= $error_description;
+		$this->custom_info 			= $custom_info;
 	}
 
 	/**
@@ -88,6 +96,16 @@ class GestpayResponse {
 	public function getErrorDescription() {
 		return $this->error_description;
 	}	
+
+	/**
+	 * Get custom info parameters
+	 * 
+	 * @return $custom_info array The custom_info;
+	 */
+
+	public function getCustomInfo() {
+		return $this->custom_info;
+	}
 
 
 }

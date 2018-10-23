@@ -75,22 +75,30 @@ class GestpayBuilder {
 	 *
 	 * @param $amount the Transaction amount. Do not insert thousands separator. Decimals, max. 2 numbers, are optional and separator is the point (Mandatory)
 	 * @param $shopTransactionId the Identifier attributed to merchant’s transaction (Mandatory)
+	 * @param $customParameters array of custom payment parameters, default = [] - see http://docs.gestpay.it/gs/how-gestpay-works.html#configuration-of-fields--parameters
 	 * @param $languageId the language ID (for future use), default = 1 (italian) - see http://api.gestpay.it/#language-codes
 	 *
 	 * @return boolean | redirect on payment page
 	 */
-    public function pay($amount, $shopTransactionId, $languageId = 1)
+    public function pay($amount, $shopTransactionId, $customParameters = [], $languageId = 1)
     {
 
-        $res = $this->Encrypt(['amount' => $amount, 'shopTransactionId' => $shopTransactionId]);
+		$customInfo = http_build_query($customParameters, '', '*P1*');
+        $res = $this->Encrypt(['amount' => $amount, 'shopTransactionId' => $shopTransactionId, 'customInfo' => $customInfo]);
 
         if ( false !== strpos($res, '<TransactionResult>OK</TransactionResult>') && preg_match('/<CryptDecryptString>([^<]+)<\/CryptDecryptString>/', $res, $match) ) {
         	$payment_page_url = ($this->test)? $this->payment_page_test_url : $this->payment_page_prod_url;
             return Redirect::to($payment_page_url.'?a=' . $this->shopLogin . '&b=' . $match[1]);
-        }
+        } else {
 
-        return '';
-    }
+			$xml = self::cleanXML($res);
+			$errorMessage = $xml->Body->EncryptResponse->EncryptResult->GestPayCryptDecrypt->ErrorDescription;
+			$errorCode = $xml->Body->EncryptResponse->EncryptResult->GestPayCryptDecrypt->ErrorCode;
+			throw new Exception($errorMessage . " (Code: {$errorCode})" );
+
+		}
+
+	}
 
 	/**
 	 * http://api.gestpay.it/#encrypt
@@ -161,8 +169,10 @@ class GestpayBuilder {
         $shop_transaction_id 	= (string)$response->ShopTransactionID;        
         $error_code 			= (string)$response->ErrorCode;        
         $error_description 		= (string)$response->ErrorDescription;        
+		$custom_infoStr	 		= str_replace('*P1*', '&' , urldecode($response->CustomInfo));
+		parse_str($custom_infoStr, $custom_info);
 
-        $result = new GestpayResponse($transaction_result, $shop_transaction_id, $error_code, $error_description);
+        $result = new GestpayResponse($transaction_result, $shop_transaction_id, $error_code, $error_description, $custom_info);
 
         return $result;
     }
