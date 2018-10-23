@@ -76,15 +76,22 @@ class GestpayBuilder {
 	 * @param $amount the Transaction amount. Do not insert thousands separator. Decimals, max. 2 numbers, are optional and separator is the point (Mandatory)
 	 * @param $shopTransactionId the Identifier attributed to merchant’s transaction (Mandatory)
 	 * @param $customParameters array of custom payment parameters, default = [] - see http://docs.gestpay.it/gs/how-gestpay-works.html#configuration-of-fields--parameters
-	 * @param $languageId the language ID (for future use), default = 1 (italian) - see http://api.gestpay.it/#language-codes
+	 * @param $languageId the language ID (for future use), default = NULL - see http://api.gestpay.it/#language-codes
 	 *
 	 * @return boolean | redirect on payment page
 	 */
-    public function pay($amount, $shopTransactionId, $customParameters = [], $languageId = 1)
+    public function pay($amount, $shopTransactionId, $customParameters = [], $languageId = null)
     {
 
 		$customInfo = http_build_query($customParameters, '', '*P1*');
-        $res = $this->Encrypt(['amount' => $amount, 'shopTransactionId' => $shopTransactionId, 'customInfo' => $customInfo]);
+
+		$encrData = ['amount' => $amount, 'shopTransactionId' => $shopTransactionId, 'customInfo' => $customInfo];
+
+		if(!is_null($languageId)){
+			$encrData["languageId"] = $languageId;
+		}
+
+        $res = $this->Encrypt($encrData);
 
         if ( false !== strpos($res, '<TransactionResult>OK</TransactionResult>') && preg_match('/<CryptDecryptString>([^<]+)<\/CryptDecryptString>/', $res, $match) ) {
         	$payment_page_url = ($this->test)? $this->payment_page_test_url : $this->payment_page_prod_url;
