@@ -190,6 +190,7 @@ class GestpayBuilder {
 		parse_str($custom_infoStr, $custom_info);
 
         $result = new GestpayResponse($transaction_result, $shop_transaction_id, $error_code, $error_description, $custom_info);
+		$result->popolate_full_response($response);
 
         return $result;
     }

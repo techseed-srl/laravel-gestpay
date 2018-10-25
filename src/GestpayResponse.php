@@ -108,4 +108,39 @@ class GestpayResponse {
 	}
 
 
+	/**
+	 * Generate a public accessible attribute for each key of the response (only if the same attribute is not already defined in this model)
+	 * 
+	 * @param SimpleXMLElement|array $response the output of the parsed xml Decrypt()
+	 * @throws \Exception
+	 */
+	public function popolate_full_response($response){
+		
+		if(!is_array($response)){
+			$response = json_decode(json_encode($response), true);
+		}
+		
+		if(!is_array($response)){
+			throw new \Exception("\$response type must be iterable");
+		}
+		
+		foreach($response as $key => $value){
+			
+			if(!property_exists(self::class, $key)){
+				$this->{$key} = $value;
+			}
+		}
+	}
+	
+	
+	/**
+	 * return the value of the passed attribute for this object if found, NULL otherwise
+	 * 
+	 * @param string $attr_name attribute name
+	 * @param boolean $only_public if TRUE only public attributes will be returned | default: true
+	 * @return mixed|null
+	 */
+	public function getDynamicAttribute($attr_name, $only_public = true){
+		return property_exists($this, $attr_name) && (!$only_public || (new \ReflectionProperty($this, $attr_name))->isPublic()) ? $this->{$attr_name} : null;
+	}
 }
