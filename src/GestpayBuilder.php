@@ -56,6 +56,11 @@ class GestpayBuilder {
 	 */    
     protected $payment_page_test_url = 'https://testecomm.sella.it/pagam/pagam.aspx';	
 
+	
+	protected $payment_redirect_url;
+	
+
+
 	/**
 	 * see http://api.gestpay.it/#introduction
 	 *
@@ -99,7 +104,9 @@ class GestpayBuilder {
 
         if ( false !== strpos($res, '<TransactionResult>OK</TransactionResult>') && preg_match('/<CryptDecryptString>([^<]+)<\/CryptDecryptString>/', $res, $match) ) {
         	$payment_page_url = ($this->test)? $this->payment_page_test_url : $this->payment_page_prod_url;
-            return Redirect::to($payment_page_url.'?a=' . $this->shopLogin . '&b=' . $match[1]);
+			
+			$this->payment_redirect_url = $payment_page_url.'?a=' . $this->shopLogin . '&b=' . $match[1];
+            return Redirect::to($this->payment_redirect_url);
         } else {
 
 			$xml = self::cleanXML($res);
@@ -241,5 +248,15 @@ class GestpayBuilder {
         $clean_xml = str_ireplace(['SOAP-ENV:', 'SOAP:'], '', $xml_response);
         return simplexml_load_string($clean_xml);    	
     }
+
+	
+	/**
+	 * return the payment url to redirect to
+	 * @return string
+	 */
+	public function getPaymentRedirectUrl(){
+		return $this->payment_redirect_url;
+	}
+
 
 }
