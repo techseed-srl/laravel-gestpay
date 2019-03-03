@@ -22,7 +22,7 @@ class GestpayBuilder {
 	 * The shopLogin
 	 * please visit http://api.gestpay.it/#encrypt
 	 */
-	protected $shopLogin;
+	public $shopLogin;  //changed visibility for iFrame use
 
 	/**
 	 * The uicCode
@@ -58,6 +58,16 @@ class GestpayBuilder {
 
 	
 	protected $payment_redirect_url;
+
+	/**
+	 * encrypted string for iFrame use
+	 * 
+	 * @var string
+	 */
+	public $encrypted_string;
+	
+	protected $apikey;
+	protected $payment_types = [];
 	
 
 
@@ -73,6 +83,11 @@ class GestpayBuilder {
 		$this->shopLogin	= $shopLogin;
 		$this->uicCode		= $uicCode;
 		$this->test			= $test;
+		
+		//setup the APIKEY if configured
+		if(is_string(config("gestpay.apikey")) && strlen(config("gestpay.apikey")) > 0){
+			$this->apikey = config("gestpay.apikey");
+		}
 	}
 	
 	/**
@@ -87,11 +102,11 @@ class GestpayBuilder {
 	 * @return boolean | redirect on payment page
 	 */
     public function pay($amount, $shopTransactionId, $customParameters = [], $languageId = null, $shopLogin = null)
-    {
+	{
 
 		$customInfo = http_build_query($customParameters, '', '*P1*');
 		$encrData = ['amount' => $amount, 'shopTransactionId' => $shopTransactionId, 'customInfo' => $customInfo];
-		
+
 		if(!is_null($languageId)){
 			$encrData["languageId"] = $languageId;
 		}
@@ -100,11 +115,24 @@ class GestpayBuilder {
 			$this->shopLogin = $shopLogin;
 		}
 		
-        $res = $this->Encrypt($encrData);
+		//request url for a specific payment type
+		if(is_array($this->payment_types) && count($this->payment_types) > 0){
+			
+			$type = "";
+			
+			foreach($this->payment_types as $value){
+				$type .= "<paymentType>".$value."</paymentType>";
+			}
+			
+			$encrData["paymentTypes"] = $type;
+		}
 
+        $res = $this->Encrypt($encrData);
+		
         if ( false !== strpos($res, '<TransactionResult>OK</TransactionResult>') && preg_match('/<CryptDecryptString>([^<]+)<\/CryptDecryptString>/', $res, $match) ) {
         	$payment_page_url = ($this->test)? $this->payment_page_test_url : $this->payment_page_prod_url;
 			
+			$this->encrypted_string = $match[1];
 			$this->payment_redirect_url = $payment_page_url.'?a=' . $this->shopLogin . '&b=' . $match[1];
             return Redirect::to($this->payment_redirect_url);
         } else {
@@ -113,9 +141,7 @@ class GestpayBuilder {
 			$errorMessage = $xml->Body->EncryptResponse->EncryptResult->GestPayCryptDecrypt->ErrorDescription;
 			$errorCode = $xml->Body->EncryptResponse->EncryptResult->GestPayCryptDecrypt->ErrorCode;
 			throw new Exception($errorMessage . " (Code: {$errorCode})" );
-
 		}
-
 	}
 
 	/**
@@ -133,6 +159,10 @@ class GestpayBuilder {
     	if(!isset($data['shopTransactionId'])) {throw new Exception('Manca transazione');}
 
     	$data = array_merge(['shopLogin' => $this->shopLogin, 'uicCode' => $this->uicCode], $data);
+		
+		if(is_string($this->apikey) && strlen($this->apikey) > 0){
+			$data["apikey"] = $this->apikey;
+		}
 
     	foreach ($data as $key => $value) {
     		$xml_data.= '<'.$key.'>'.$value.'</'.$key.'>';
@@ -157,6 +187,11 @@ class GestpayBuilder {
     {
         $xml_data = '';
     	$data = ['shopLogin' => $this->shopLogin, 'CryptedString' => $CryptedString];
+		
+		if(is_string($this->apikey) && strlen($this->apikey) > 0){
+			$data["apikey"] = $this->apikey;
+		}
+		
     	foreach ($data as $key => $value) {
     		$xml_data.= '<'.$key.'>'.$value.'</'.$key.'>';
     	}
@@ -259,4 +294,27 @@ class GestpayBuilder {
 	}
 
 
+
+	/**
+	 * run-time setup of an APKIKEY
+	 * 
+	 * @param string $apikey
+	 * @return $this
+	 */
+	public function apikey($apikey){
+		$this->apikey = $apikey;
+		return $this;
+	}
+
+
+	/**
+	 * add a payment type for requesting a specific url
+	 * 
+	 * @param string $payment_type
+	 * @return $this
+	 */
+	public function add_payment_type($payment_type){
+		$this->payment_types[] = $payment_type;
+		return $this;
+	}
 }

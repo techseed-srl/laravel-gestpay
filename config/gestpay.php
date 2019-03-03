@@ -29,5 +29,10 @@ return [
 	/**
 	 * Indicates whether the software is in test mode
 	 */
-    'test'		=> true,
+    'test'		=> env("GESTPAY_TEST", false),
+	
+	/**
+	 * APIKEY for authentication (instead of IP-source based auth)
+	 */
+	'apikey' => env("GESTPAY_APIKEY", null),
 ];
