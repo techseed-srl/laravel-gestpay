@@ -105,6 +105,7 @@ class GestpayBuilder {
 	{
 
 		$customInfo = http_build_query($customParameters, '', '*P1*');
+		$customInfo = urldecode($customInfo); //revert chars like @...
 		$encrData = ['amount' => $amount, 'shopTransactionId' => $shopTransactionId, 'customInfo' => $customInfo];
 
 		if(!is_null($languageId)){
