@@ -140,8 +140,15 @@ class GestpayBuilder {
 
 			$xml = self::cleanXML($res);
 			$errorMessage = $xml->Body->EncryptResponse->EncryptResult->GestPayCryptDecrypt->ErrorDescription;
-			$errorCode = $xml->Body->EncryptResponse->EncryptResult->GestPayCryptDecrypt->ErrorCode;
-			throw new Exception($errorMessage . " (Code: {$errorCode})" );
+            $errorCode = $xml->Body->EncryptResponse->EncryptResult->GestPayCryptDecrypt->ErrorCode;
+
+            try{
+                $numeric_errorcode = (int)"{$errorCode}";
+            }catch(\Exception $e){
+                $numeric_errorcode = 0;
+            }
+            
+			throw new Exception($errorMessage . " (Code: {$errorCode})", $numeric_errorcode);
 		}
 	}
 
