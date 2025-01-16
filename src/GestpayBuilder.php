@@ -54,7 +54,7 @@ class GestpayBuilder {
 	/**
 	 * PaymentPage TEST URI
 	 */    
-    protected $payment_page_test_url = 'https://testecomm.sella.it/pagam/pagam.aspx';	
+    protected $payment_page_test_url = 'https://sandbox.gestpay.net/pagam/pagam.aspx';	
 
 	
 	protected $payment_redirect_url;
